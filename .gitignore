@@ -1,0 +1,18 @@
+# Build artefacts
+bin/
+obj/
+
+# Log files produced by server and tests
+*.log
+
+# Benchmark result files (auto-generated; kept in bench/results/)
+bench/results/*.txt
+
+# Editor and OS noise
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
