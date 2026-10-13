@@ -107,7 +107,8 @@ static void test_lru_eviction_and_boundaries(void) {
     assert(hashtable_exists(ht, "k3"));
     assert(hashtable_exists(ht, "k4"));
 
-    /* Order MRU -> LRU is now: k4, k1, k3 */
+    /* exists() calls above each promote their key: 106→k1 MRU, 107→k3 MRU, 108→k4 MRU.
+     * Order MRU -> LRU is now: k4, k3, k1 */
 
     /* Touch k3 via exists: k3 becomes MRU. Order: k3, k4, k1 */
     assert(hashtable_exists(ht, "k3"));
@@ -122,18 +123,19 @@ static void test_lru_eviction_and_boundaries(void) {
     assert(hashtable_exists(ht, "k5"));
 
     /* Test dynamic reduction of capacity: reduce to 2 */
-    /* Order MRU -> LRU is: k5, k3, k4. Reducing to 2 evicts k4 */
+    /* exists() calls above each promote their key: 120→k3 MRU, 121→k4 MRU, 122→k5 MRU.
+     * Order MRU -> LRU is: k5, k4, k3. Reducing to 2 evicts LRU (k3). */
     hashtable_set_max_capacity(ht, 2);
     assert(hashtable_get_max_capacity(ht) == 2);
     assert(hashtable_count(ht) == 2);
-    assert(!hashtable_exists(ht, "k4"));
-    assert(hashtable_exists(ht, "k3"));
+    assert(!hashtable_exists(ht, "k3")); /* k3 was evicted (was LRU) */
+    assert(hashtable_exists(ht, "k4"));
     assert(hashtable_exists(ht, "k5"));
 
     /* Test explicit deletion updates LRU list safely */
-    assert(hashtable_del(ht, "k3"));
+    assert(hashtable_del(ht, "k4"));
     assert(hashtable_count(ht) == 1);
-    assert(!hashtable_exists(ht, "k3"));
+    assert(!hashtable_exists(ht, "k4"));
 
     /* Capacity now has room for 1 more without eviction */
     assert(hashtable_set(ht, "k6", "v6") == 0);
