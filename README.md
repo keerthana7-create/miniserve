@@ -4,8 +4,6 @@ A high-performance, concurrent in-memory TCP key-value server written in strict 
 
 MiniServe supports dual concurrency architectures (**Thread-Pool** and Linux **Epoll Event-Loop**), a thread-safe dynamic hash table with optional **LRU eviction** and **millisecond-precision TTL expiration**, line-based ASCII protocol parsing, bounded output buffering with backpressure handling, and a dedicated multi-threaded benchmarking suite.
 
----
-
 ## Table of Contents
 1. [Architecture & Design](#architecture--design)
    - [Concurrency Engines](#concurrency-engines)
@@ -27,8 +25,6 @@ MiniServe supports dual concurrency architectures (**Thread-Pool** and Linux **E
    - [Persistent Results](#persistent-results)
    - [Illustrative Results vs. Empirical Data](#illustrative-results-vs-empirical-data)
 6. [Design Trade-Offs & Limitations](#design-trade-offs--limitations)
-
----
 
 ## Architecture & Design
 
@@ -78,8 +74,6 @@ MiniServe implements two swappable network architectures configured via `--mode`
    - Incomplete writes register for `EPOLLOUT` notifications; completed flushes deregister `EPOLLOUT` to prevent CPU spinning.
    - Signal handling (`SIGINT`, `SIGTERM`) uses the self-pipe trick (`pipe2(O_NONBLOCK | O_CLOEXEC)`) registered with epoll, waking the event loop cleanly for zero-leak teardown.
 
----
-
 ### Storage Engine
 
 The storage engine (`src/hashtable.c`) is an in-memory key-value store optimized for high-throughput concurrent access:
@@ -97,16 +91,12 @@ The storage engine (`src/hashtable.c`) is an in-memory key-value store optimized
   - Passive (lazy) expiration evaluation on lookup, existence check, and key counting.
   - Deterministic testing hook (`hashtable_set_test_time_ms`) allows sub-millisecond precision validation of expiration boundaries without wall-clock sleep delays.
 
----
-
 ### Robustness & Lifecycle
 
 - **Non-Blocking Descriptor Validation**: Return values of `fcntl(F_GETFL)` and `fcntl(F_SETFL)` are verified on both listening and accepted sockets. Startup fails cleanly if listening socket flags cannot be set, and unconfigurable client sockets are closed immediately without registering with epoll.
 - **Output-Buffer Overflow Backpressure**: If a client socket kernel buffer fills up and pending responses exceed the 64 KB application buffer threshold, the connection is terminated safely to prevent memory exhaustion, closing the socket exactly once.
 - **Idle Timeout & Slowloris Defense**: Configurable inactivity timeout (`-T, --idle-timeout`, default: 30 seconds). Slow or stalled connections are automatically detected and evicted.
 - **Lock-Free Atomic Counters**: Server connection metrics (`active_connections`, `total_connections`, `running`) utilize C11 `<stdatomic.h>` primitives with compile-time lock-free assertions (`atomic_is_lock_free`).
-
----
 
 ## Protocol Specification
 
@@ -160,8 +150,6 @@ C: QUIT\r\n
 S: BYE\r\n
 ```
 
----
-
 ## Command-Line Interface
 
 ```text
@@ -177,8 +165,6 @@ Options:
   -K, --max-keys <num>          Maximum key capacity before LRU eviction (default: 0 = unbounded)
   -h, --help                    Display this help message and exit
 ```
-
----
 
 ## Building, Running & Testing
 
@@ -246,8 +232,6 @@ make tsan
 make valgrind
 ```
 
----
-
 ## Benchmarking & Performance
 
 ### Benchmark Client (`bench/bench_client.c`)
@@ -306,8 +290,6 @@ epoll          | 10           | 71800.55         | 0.125 ms       | 0.295 ms
 epoll          | 50           | 83450.90         | 0.540 ms       | 1.150 ms      
 epoll          | 100          | 89120.40         | 0.980 ms       | 1.950 ms      
 ```
-
----
 
 ## Design Trade-Offs & Limitations
 
