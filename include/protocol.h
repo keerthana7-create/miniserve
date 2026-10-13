@@ -16,10 +16,12 @@
 typedef enum {
     CMD_UNKNOWN = 0,
     CMD_SET,
+    CMD_SETEX,
     CMD_GET,
     CMD_DEL,
     CMD_EXISTS,
     CMD_COUNT,
+    CMD_TTL,
     CMD_QUIT
 } command_type_t;
 
@@ -30,6 +32,7 @@ typedef struct {
     command_type_t type;
     char key[PROTO_MAX_KEY_LEN + 1];
     char value[PROTO_MAX_VAL_LEN + 1];
+    int ttl_sec;
 } command_request_t;
 
 /**

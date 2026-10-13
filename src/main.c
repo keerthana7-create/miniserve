@@ -18,6 +18,7 @@ static void print_usage(const char *prog_name) {
     printf("  -l, --log-file <path>         File path to write persistent logs (default: stderr only)\n");
     printf("  -c, --max-connections <num>   Maximum connection queue capacity (default: 1024)\n");
     printf("  -T, --idle-timeout <sec>      Client inactivity timeout in seconds (default: 30, range: 1-3600)\n");
+    printf("  -K, --max-keys <num>          Maximum key capacity before LRU eviction (default: 0 = unbounded)\n");
     printf("  -h, --help                    Display this help message and exit\n");
 }
 
@@ -43,6 +44,7 @@ static void print_banner(const server_config_t *config) {
     printf("  Concurrency Mode:   %s\n", mode_str);
     printf("  Queue Capacity:     %d (bounded connection queue)\n", config->max_connections);
     printf("  Idle Timeout:       %d seconds\n", config->idle_timeout_sec);
+    printf("  Max Keys (LRU):     %zu%s\n", config->max_keys, (config->max_keys == 0) ? " (unbounded)" : "");
     printf("  Log Destination:    %s\n", config->log_file[0] != '\0' ? config->log_file : "stderr");
     printf(" ================================================================\n\n");
 }
@@ -58,6 +60,7 @@ int main(int argc, char *argv[]) {
         {"log-file",        required_argument, 0, 'l'},
         {"max-connections", required_argument, 0, 'c'},
         {"idle-timeout",    required_argument, 0, 'T'},
+        {"max-keys",        required_argument, 0, 'K'},
         {"help",            no_argument,       0, 'h'},
         {0, 0, 0, 0}
     };
@@ -65,7 +68,7 @@ int main(int argc, char *argv[]) {
     int opt = 0;
     int option_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "p:t:m:l:c:T:h", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "p:t:m:l:c:T:K:h", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'p': {
                 if (!parse_port(optarg, &config.port)) {
@@ -118,6 +121,15 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             }
+            case 'K': {
+                int max_k = 0;
+                if (!parse_int(optarg, &max_k, 0, 10000000)) {
+                    fprintf(stderr, "Error: Invalid max keys '%s'. Must be >= 0.\n", optarg);
+                    return EXIT_FAILURE;
+                }
+                config.max_keys = (size_t)max_k;
+                break;
+            }
             case 'h': {
                 print_usage(argv[0]);
                 return EXIT_SUCCESS;
@@ -167,6 +179,11 @@ int main(int argc, char *argv[]) {
         LOG_FATAL("Failed to allocate hash table storage engine.");
         logger_close();
         return EXIT_FAILURE;
+    }
+
+    if (config.max_keys > 0) {
+        hashtable_set_max_capacity(ht, config.max_keys);
+        LOG_INFO("LRU cache eviction enabled (max_keys=%zu).", config.max_keys);
     }
 
     LOG_INFO("Storage engine initialized (1024 initial buckets).");

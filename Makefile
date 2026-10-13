@@ -26,6 +26,7 @@ TEST_THREADPOOL = $(BIN_DIR)/test_threadpool
 TEST_SERVER = $(BIN_DIR)/test_server
 TEST_ROBUSTNESS = $(BIN_DIR)/test_robustness
 TEST_EPOLL = $(BIN_DIR)/test_epoll
+TEST_PHASE8 = $(BIN_DIR)/test_phase8
 
 # ThreadSanitizer-instrumented test executables
 TEST_PHASE1_TSAN = $(BIN_DIR)/test_phase1_tsan
@@ -35,6 +36,7 @@ TEST_THREADPOOL_TSAN = $(BIN_DIR)/test_threadpool_tsan
 TEST_SERVER_TSAN = $(BIN_DIR)/test_server_tsan
 TEST_ROBUSTNESS_TSAN = $(BIN_DIR)/test_robustness_tsan
 TEST_EPOLL_TSAN = $(BIN_DIR)/test_epoll_tsan
+TEST_PHASE8_TSAN = $(BIN_DIR)/test_phase8_tsan
 
 # Phase 7 benchmark client executable
 BENCH_SRC = bench/bench_client.c
@@ -85,6 +87,9 @@ $(TEST_ROBUSTNESS): $(TEST_DIR)/test_robustness.c $(CORE_SRCS) $(wildcard $(INC_
 $(TEST_EPOLL): $(TEST_DIR)/test_epoll.c $(CORE_SRCS) $(wildcard $(INC_DIR)/*.h) | $(BIN_DIR)
 	$(CC) $(TEST_CFLAGS) $(TEST_DIR)/test_epoll.c $(CORE_SRCS) -o $@ $(LDFLAGS)
 
+$(TEST_PHASE8): $(TEST_DIR)/test_phase8.c $(CORE_SRCS) $(wildcard $(INC_DIR)/*.h) | $(BIN_DIR)
+	$(CC) $(TEST_CFLAGS) $(TEST_DIR)/test_phase8.c $(CORE_SRCS) -o $@ $(LDFLAGS)
+
 # ThreadSanitizer-instrumented test executables
 $(TEST_PHASE1_TSAN): $(TEST_DIR)/test_phase1.c $(CORE_SRCS) $(wildcard $(INC_DIR)/*.h) | $(BIN_DIR)
 	$(CC) $(TSAN_CFLAGS) $(TEST_DIR)/test_phase1.c $(CORE_SRCS) -o $@ $(TSAN_LDFLAGS)
@@ -107,7 +112,10 @@ $(TEST_ROBUSTNESS_TSAN): $(TEST_DIR)/test_robustness.c $(CORE_SRCS) $(wildcard $
 $(TEST_EPOLL_TSAN): $(TEST_DIR)/test_epoll.c $(CORE_SRCS) $(wildcard $(INC_DIR)/*.h) | $(BIN_DIR)
 	$(CC) $(TSAN_CFLAGS) $(TEST_DIR)/test_epoll.c $(CORE_SRCS) -o $@ $(TSAN_LDFLAGS)
 
-test: $(TEST_PHASE1) $(TEST_HASHTABLE) $(TEST_PROTOCOL) $(TEST_THREADPOOL) $(TEST_SERVER) $(TEST_ROBUSTNESS) $(TEST_EPOLL)
+$(TEST_PHASE8_TSAN): $(TEST_DIR)/test_phase8.c $(CORE_SRCS) $(wildcard $(INC_DIR)/*.h) | $(BIN_DIR)
+	$(CC) $(TSAN_CFLAGS) $(TEST_DIR)/test_phase8.c $(CORE_SRCS) -o $@ $(TSAN_LDFLAGS)
+
+test: $(TEST_PHASE1) $(TEST_HASHTABLE) $(TEST_PROTOCOL) $(TEST_THREADPOOL) $(TEST_SERVER) $(TEST_ROBUSTNESS) $(TEST_EPOLL) $(TEST_PHASE8)
 	@echo "--- Running Phase 1 Unit Tests ---"
 	./$(TEST_PHASE1)
 	@echo "--- Running Hash Table Unit Tests ---"
@@ -122,6 +130,8 @@ test: $(TEST_PHASE1) $(TEST_HASHTABLE) $(TEST_PROTOCOL) $(TEST_THREADPOOL) $(TES
 	./$(TEST_ROBUSTNESS)
 	@echo "--- Running Phase 6 Linux Epoll Integration Tests ---"
 	./$(TEST_EPOLL)
+	@echo "--- Running Phase 8 TTL & LRU Integration Tests ---"
+	./$(TEST_PHASE8)
 
 # Compile both server and all test harnesses with TSan and run the instrumented test suite.
 # Strictly fails with nonzero exit status whenever an instrumented test fails, crashes, or reports a race.
@@ -129,9 +139,9 @@ test: $(TEST_PHASE1) $(TEST_HASHTABLE) $(TEST_PROTOCOL) $(TEST_THREADPOOL) $(TES
 # and no data race was reported.
 tsan: CFLAGS = $(TSAN_CFLAGS)
 tsan: LDFLAGS = $(TSAN_LDFLAGS)
-tsan: clean $(TARGET) $(TEST_PHASE1_TSAN) $(TEST_HT_TSAN) $(TEST_PROTO_TSAN) $(TEST_THREADPOOL_TSAN) $(TEST_SERVER_TSAN) $(TEST_ROBUSTNESS_TSAN) $(TEST_EPOLL_TSAN)
+tsan: clean $(TARGET) $(TEST_PHASE1_TSAN) $(TEST_HT_TSAN) $(TEST_PROTO_TSAN) $(TEST_THREADPOOL_TSAN) $(TEST_SERVER_TSAN) $(TEST_ROBUSTNESS_TSAN) $(TEST_EPOLL_TSAN) $(TEST_PHASE8_TSAN)
 	@echo "--- Running ThreadSanitizer Test Suite ---"
-	@for test_bin in $(TEST_PHASE1_TSAN) $(TEST_HT_TSAN) $(TEST_PROTO_TSAN) $(TEST_THREADPOOL_TSAN) $(TEST_SERVER_TSAN) $(TEST_ROBUSTNESS_TSAN) $(TEST_EPOLL_TSAN); do \
+	@for test_bin in $(TEST_PHASE1_TSAN) $(TEST_HT_TSAN) $(TEST_PROTO_TSAN) $(TEST_THREADPOOL_TSAN) $(TEST_SERVER_TSAN) $(TEST_ROBUSTNESS_TSAN) $(TEST_EPOLL_TSAN) $(TEST_PHASE8_TSAN); do \
 		echo "Executing $$test_bin..."; \
 		out=$$(./$$test_bin 2>&1); \
 		status=$$?; \

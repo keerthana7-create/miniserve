@@ -68,6 +68,8 @@ bool hashtable_get(hashtable_t *ht, const char *key, char *out_buf, size_t out_b
  */
 bool hashtable_del(hashtable_t *ht, const char *key);
 
+#include <stdint.h>
+
 /**
  * Check whether a key exists in the hash table.
  *
@@ -84,5 +86,56 @@ bool hashtable_exists(hashtable_t *ht, const char *key);
  * @return Number of entries.
  */
 size_t hashtable_count(hashtable_t *ht);
+
+/**
+ * Store a key-value pair with an optional Time-To-Live (TTL) expiration in seconds.
+ * If ttl_sec <= 0, the key is persistent (no expiration).
+ *
+ * @param ht Pointer to hash table instance.
+ * @param key Null-terminated key string.
+ * @param value Null-terminated value string.
+ * @param ttl_sec TTL in seconds (> 0 for expiring key, <= 0 for persistent key).
+ * @return 0 on success, -1 on failure.
+ */
+int hashtable_set_ttl(hashtable_t *ht, const char *key, const char *value, int ttl_sec);
+
+/**
+ * Retrieve the remaining Time-To-Live (TTL) for a key in seconds.
+ *
+ * @param ht Pointer to hash table instance.
+ * @param key Null-terminated key string.
+ * @return Remaining TTL in seconds (>= 0),
+ *         -1 if the key exists but has no expiration (persistent),
+ *         -2 if the key does not exist or has expired.
+ */
+int64_t hashtable_get_ttl(hashtable_t *ht, const char *key);
+
+/**
+ * Configure the maximum capacity for LRU eviction.
+ * If max_capacity == 0, the table grows unboundedly (no eviction).
+ * If max_capacity > 0 and the table reaches this limit upon insertion,
+ * the least recently used key is evicted automatically in O(1) time.
+ *
+ * @param ht Pointer to hash table instance.
+ * @param max_capacity Maximum number of entries before LRU eviction.
+ */
+void hashtable_set_max_capacity(hashtable_t *ht, size_t max_capacity);
+
+/**
+ * Get the configured maximum LRU capacity (0 = unbounded).
+ *
+ * @param ht Pointer to hash table instance.
+ * @return Maximum capacity limit.
+ */
+size_t hashtable_get_max_capacity(hashtable_t *ht);
+
+/**
+ * Test hook for deterministic TTL expiration testing without sleeping.
+ * If mock_time_ms > 0, the hash table uses this millisecond timestamp.
+ * If mock_time_ms <= 0, real system CLOCK_MONOTONIC is used.
+ *
+ * @param mock_time_ms Mock timestamp in milliseconds.
+ */
+void hashtable_set_test_time_ms(int64_t mock_time_ms);
 
 #endif /* MINISERVE_HASHTABLE_H */

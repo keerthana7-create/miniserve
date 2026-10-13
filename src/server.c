@@ -128,6 +128,7 @@ void server_config_init_defaults(server_config_t *config) {
     config->log_file[0] = '\0';
     config->max_connections = 1024;
     config->idle_timeout_sec = CLIENT_DEFAULT_IDLE_TIMEOUT_SEC;
+    config->max_keys = 0;
 }
 
 /**

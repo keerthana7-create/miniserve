@@ -27,6 +27,7 @@ typedef struct {
     char log_file[256];
     int max_connections;
     int idle_timeout_sec;
+    size_t max_keys;
 } server_config_t;
 
 /**
