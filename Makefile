@@ -176,6 +176,7 @@ valgrind: debug
 
 $(BENCH_TARGET): $(BENCH_SRC) $(SRC_DIR)/util.c $(wildcard $(INC_DIR)/*.h) | $(BIN_DIR)
 	$(CC) $(CFLAGS) $(BENCH_SRC) $(SRC_DIR)/util.c -o $@ $(LDFLAGS)
+	@chmod +x bench/run_comparison.sh 2>/dev/null || true
 
 bench: $(BENCH_TARGET)
 
